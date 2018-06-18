@@ -1,5 +1,5 @@
 """neural_net.py
-~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~
 
 Implementing the stochastic gradient descent learning algorithm for 
 a feedforward neural network. The main objective of the neural network
@@ -27,7 +27,7 @@ import matplotlib.pyplot as plt
 ##### Defining the underlying function for regression
 
 class Fn(object):
-    """function that neural network is going to learn to approximate"""
+    """The example function that neural network is going to learn to approximate"""
 
     def __init__(self, xmin, xmax, fn):
         """
@@ -48,7 +48,7 @@ class Fn(object):
         self.func = fn
 
 
-#### Define the quadratic and cross-entropy cost functions
+#### Define the quadratic, cross-entropy and "exponential" cost functions
 
 class QuadraticCost(object):
 
@@ -115,7 +115,7 @@ class ExponentialCost(object):
         """
         Return the cost associated with an output ``a`` and desired output
         ``y``. This cost function is desirable if the activation of output
-        neuron is an exponential function. It avoirds slow down of learning
+        neuron is an exponential function. It avoids slow down of learning
         when the output neuron is saturated. 
         Note that in our convention the output of the last layer is
         transpose of the last layer activation y_out = a.transpose().
@@ -153,7 +153,7 @@ class Network(object):
         approximate (see docstring for Fn).
         activations specifies the activation function for each layer of 
         the neural network. If it's not given, all activations are assumed
-        to be sigmoid function.
+        to be sigmoid.
 
         """
         if activations==None:
@@ -165,7 +165,7 @@ class Network(object):
         self.function = Fn
         self.activations = activations
         for a in activations:
-            assert a in ["Sigmoid", "Exponential"], "%s is not a valid activation" %a
+            assert a in ["Sigmoid", "Exponential", "RecL"], "%s is not a valid activation" %a
         assert len(activations) == len(sizes)-1, "number of activations and layers do not match"
 
     def default_weight_initializer(self):
@@ -191,6 +191,8 @@ class Network(object):
             return sigmoid(z)
         elif function=="Exponential":
             return np.exp(z)
+        elif function=="RecL":
+            return np.maximum(z, 0)
     
     def activation_prime(self, z, function):
         """Return the derivation of activation ``function`` for a given input ``z``."""
@@ -198,6 +200,8 @@ class Network(object):
             return sigmoid_prime(z)
         elif function=="Exponential":
             return np.exp(z)
+        elif function=="RecL":
+            return 1*(z>=0)
         
     def feedforward(self, X):
         """
@@ -488,6 +492,7 @@ class Network(object):
 
 
 #### Loading a Network
+
 def load(filename):
     """Load a neural network from the file ``filename``.  Returns an
     instance of Network.
