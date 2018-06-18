@@ -1,2 +1,3 @@
-# mlmf
-Machine learning techniques for mathematical finance, particularly derivative pricing.
+# nn-mf
+Machine learning and neural network techniques for mathematical finance, particularly derivative pricing. 
+
