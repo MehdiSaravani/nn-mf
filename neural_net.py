@@ -225,7 +225,8 @@ class Network(object):
             monitor_training_cost=True,
             monitor_training_accuracy=True,
             show_plot=True,
-            print_epoch=True):
+            print_epoch=True,
+            print_delay_time=60.0):
         """Train the neural network using mini-batch stochastic gradient
         descent.  The ``training_data`` is a tuple ``(X, y)``. 
         X is a n*n_in numpy array representing "n" input data,
@@ -253,7 +254,10 @@ class Network(object):
         the cost/accuracy (per epoch) for True monitoring flags.
         Set print_epoch=True if you want to monitor the speed 
         of learning program.
+        print_delay_time sets the time delay between printing current epoch number.
         """
+        # to keep track of the total learning time
+        begin_time = time.time()
         X, y = training_data
         n = len(X)
         evaluation_cost, evaluation_accuracy = [], []
@@ -276,60 +280,66 @@ class Network(object):
         # accuracy plots.
         epoch_threshold = []
         start_time = time.time()
-        while epoch <= epochs or variable_learning:
-            # randomly ordering the training data and putting them into
-            # mini batches.
-            random.shuffle(random_order)
-            mini_batches = [(X[random_order[k:k+mini_batch_size]],
-                            y[random_order[k:k+mini_batch_size]])
-                            for k in range(0, n, mini_batch_size)]
-            for mini_batch in mini_batches:
-                v_weights, v_biases = self.update_mini_batch(
-                    mini_batch, eta, mu, lmbda, n, v_weights, v_biases)    
-            if print_epoch and time.time()-start_time > 20.0:
-                start_time = time.time()
-                print("Epoch %s training complete." % epoch, "learning_halve = %s" %learning_halve)
-            epoch += 1
-            if monitor_training_cost:
-                cost = self.total_cost(training_data, lmbda)
-                training_cost.append(cost)
-            if monitor_training_accuracy:
-                accuracy = self.accuracy(training_data)
-                training_accuracy.append(accuracy)
-            if monitor_evaluation_cost:
-                cost = self.total_cost(evaluation_data, lmbda)
-                evaluation_cost.append(cost)
-            if monitor_evaluation_accuracy:
-                accuracy = self.accuracy(evaluation_data)
-                evaluation_accuracy.append(accuracy)
-            if variable_learning:
-                # if a better point in optimization is found, make 
-                # a copy of that instant. 
-                if self.total_cost(training_data, lmbda) < best_cost:
-                    best_cost = self.total_cost(training_data, lmbda)
-                    best_weights = self.weights[:]
-                    best_biases = self.biases[:]
-                    best_epoch = epoch
-                    best_v_weights = v_weights[:]
-                    best_v_biases = v_biases[:]
-                    last_improvement = 0
-                else:
-                    last_improvement += 1
-                # if no improvement is made within no_improvement_size,
-                # halve the learning rate and start from the best optimization point
-                if last_improvement == no_improvement_size:
-                    learning_halve -= 1
-                    epoch_threshold.append(epoch)
-                    last_improvement = 0
-                    eta = eta/2
-                    self.weights = best_weights[:]
-                    self.biases = best_biases[:]
-                    v_weights = best_v_weights[:]
-                    v_biases = best_v_biases[:]
-                if learning_halve == 0:
-                    self.weights = best_weights
-                    self.biases = best_biases
-                    break
+        try:
+            while epoch <= epochs or variable_learning:
+                # randomly ordering the training data and putting them into
+                # mini batches.
+                random.shuffle(random_order)
+                mini_batches = [(X[random_order[k:k+mini_batch_size]],
+                                y[random_order[k:k+mini_batch_size]])
+                                for k in range(0, n, mini_batch_size)]
+                for mini_batch in mini_batches:
+                    v_weights, v_biases = self.update_mini_batch(
+                        mini_batch, eta, mu, lmbda, n, v_weights, v_biases)
+                if print_epoch and time.time()-start_time > print_delay_time:
+                    start_time = time.time()
+                    print("Epoch %s training complete." % epoch, "learning_halve = %s" %learning_halve)
+                epoch += 1
+                if monitor_training_cost:
+                    cost = self.total_cost(training_data, lmbda)
+                    training_cost.append(cost)
+                if monitor_training_accuracy:
+                    accuracy = self.accuracy(training_data)
+                    training_accuracy.append(accuracy)
+                if monitor_evaluation_cost:
+                    cost = self.total_cost(evaluation_data, lmbda)
+                    evaluation_cost.append(cost)
+                if monitor_evaluation_accuracy:
+                    accuracy = self.accuracy(evaluation_data)
+                    evaluation_accuracy.append(accuracy)
+                if variable_learning:
+                    # if a better point in optimization is found, make
+                    # a copy of that instant.
+                    if self.total_cost(training_data, lmbda) < best_cost:
+                        best_cost = self.total_cost(training_data, lmbda)
+                        best_weights = self.weights[:]
+                        best_biases = self.biases[:]
+                        best_epoch = epoch
+                        best_v_weights = v_weights[:]
+                        best_v_biases = v_biases[:]
+                        last_improvement = 0
+                    else:
+                        last_improvement += 1
+                    # if no improvement is made within no_improvement_size,
+                    # halve the learning rate and start from the best optimization point
+                    if last_improvement == no_improvement_size:
+                        learning_halve -= 1
+                        epoch_threshold.append(epoch)
+                        last_improvement = 0
+                        eta = eta/2
+                        self.weights = best_weights[:]
+                        self.biases = best_biases[:]
+                        v_weights = best_v_weights[:]
+                        v_biases = best_v_biases[:]
+                    if learning_halve == 0:
+                        self.weights = best_weights
+                        self.biases = best_biases
+                        break
+        except KeyboardInterrupt:
+            print("Learning stopped early")
+            self.weights = best_weights
+            self.biases = best_biases
+        print("total learning time = %2.1f minutes" % ((time.time()-begin_time)/60.0))
         if show_plot:
             plt.figure()
             iteration = list(range(1, epoch))
