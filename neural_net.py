@@ -160,31 +160,59 @@ class Network(object):
             activations=["Sigmoid" for j in range(len(sizes)-1)]
         self.num_layers = len(sizes)
         self.sizes = sizes 
-        self.default_weight_initializer()
         self.cost=cost
         self.function = Fn
         self.activations = activations
         for a in activations:
             assert a in ["Sigmoid", "Exponential", "RecL"], "%s is not a valid activation" %a
         assert len(activations) == len(sizes)-1, "number of activations and layers do not match"
+        self.default_weight_initializer()
 
     def default_weight_initializer(self):
-        """Initialize each weight using a Gaussian distribution with mean 0
-        and standard deviation 1 over the square root of the number of
-        weights connecting to the same neuron.  Initialize the biases
-        using a Gaussian distribution with mean 0 and standard
-        deviation 1.
-
+        """
+        Initialize each weight and bias according to neuron activation type.
         Note that the first layer is assumed to be an input layer, and
         by convention we won't set any biases for those neurons, since
         biases are only ever used in computing the outputs from later
         layers.
 
         """
-        self.biases = [np.random.randn(y, 1) for y in self.sizes[1:]]
-        self.weights = [np.random.randn(y, x)/np.sqrt(x)
-                        for x, y in zip(self.sizes[:-1], self.sizes[1:])]
-    
+        self.biases, self.weights = [], []
+        for layer in range(1, len(self.sizes)):
+            self.biases.append(self.b_initialize(layer))
+            self.weights.append(self.w_initialize(layer))
+
+    def b_initialize(self, layer):
+        """
+        Initialize each bias of layer ``l`` according to their activation neurons.
+        For Sigmoid or Exponential neurons, initialize the biases using a Gaussian
+        distribution with mean 0 and standard deviation 1.
+        For Rectified Linear neurons, initialize biases using a uniform random
+        distribution between 0 and 1.
+        
+        """
+        y = self.sizes[layer]
+        if self.activations[layer-1] in ["Sigmoid", "Exponential"]:
+            return np.random.randn(y, 1)
+        elif self.activations[layer-1]=="RecL":
+            return np.random.uniform(0.0, 1.0, size=(y,1))
+
+    def w_initialize(self, l):
+        """
+        Initialize each weight of layer ``l`` according to their activation neurons.
+        For Sigmoid or Exponential neurons, initialize using a Gaussian distribution
+        with mean 0 and standard deviation 1 over the square root of the number of
+        weights connecting to the same neuron.
+        For Rectified Linear neurons, initialize weights to zero.
+
+        """
+        y = self.sizes[l]
+        x = self.sizes[l-1]
+        if self.activations[l-1] in ["Sigmoid", "Exponential"]:
+            return np.random.randn(y, x) / np.sqrt(x)
+        elif self.activations[l-1]=="RecL":
+            return np.zeros((y, x))
+
     def activation(self, z, function):
         """Return the output of activation ``function`` for a given input ``z``."""
         if function=="Sigmoid":
