@@ -188,14 +188,14 @@ class Network(object):
         For Sigmoid or Exponential neurons, initialize the biases using a Gaussian
         distribution with mean 0 and standard deviation 1.
         For Rectified Linear neurons, initialize biases using a uniform random
-        distribution between 0 and 1.
-        
+        distribution between 1 and 2.
+
         """
         y = self.sizes[layer]
         if self.activations[layer-1] in ["Sigmoid", "Exponential"]:
             return np.random.randn(y, 1)
         elif self.activations[layer-1]=="RecL":
-            return np.random.uniform(0.0, 1.0, size=(y,1))
+            return np.random.uniform(1.0, 2.0, size=(y,1))
 
     def w_initialize(self, l):
         """
@@ -203,7 +203,7 @@ class Network(object):
         For Sigmoid or Exponential neurons, initialize using a Gaussian distribution
         with mean 0 and standard deviation 1 over the square root of the number of
         weights connecting to the same neuron.
-        For Rectified Linear neurons, initialize weights to zero.
+        For Rectified Linear neurons, the same.
 
         """
         y = self.sizes[l]
@@ -211,7 +211,7 @@ class Network(object):
         if self.activations[l-1] in ["Sigmoid", "Exponential"]:
             return np.random.randn(y, x) / np.sqrt(x)
         elif self.activations[l-1]=="RecL":
-            return np.zeros((y, x))
+            return np.random.randn(y, x) / np.sqrt(x)
 
     def activation(self, z, function):
         """Return the output of activation ``function`` for a given input ``z``."""
