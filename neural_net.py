@@ -485,7 +485,8 @@ class Network(object):
         data = {"sizes": self.sizes,
                 "weights": [w.tolist() for w in self.weights],
                 "biases": [b.tolist() for b in self.biases],
-                "cost": str(self.cost.__name__)}
+                "cost": str(self.cost.__name__),
+                "activations": self.activations}
         f = open(filename, "w")
         json.dump(data, f)
         f.close()
@@ -543,7 +544,7 @@ def load(filename):
     data = json.load(f)
     f.close()
     cost = getattr(sys.modules[__name__], data["cost"])
-    net = Network(data["sizes"], cost=cost)
+    net = Network(data["sizes"], activations=data["activations"], cost=cost)
     net.weights = [np.array(w) for w in data["weights"]]
     net.biases = [np.array(b) for b in data["biases"]]
     return net
