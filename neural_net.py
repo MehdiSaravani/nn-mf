@@ -247,6 +247,7 @@ class Network(object):
             variable_learning=True,
             learning_halve=5,
             lmbda = 0.0,
+            monitor_lapse=100,
             evaluation_data=None,
             monitor_evaluation_cost=True,
             monitor_evaluation_accuracy=True,
@@ -322,19 +323,21 @@ class Network(object):
                 if print_epoch and time.time()-start_time > print_delay_time:
                     start_time = time.time()
                     print("Epoch %s training complete." % epoch, "learning_halve = %s" %learning_halve)
-                epoch += 1
-                if monitor_training_cost:
+
+                if monitor_training_cost and epoch%monitor_lapse==1:
                     cost = self.total_cost(training_data, lmbda)
                     training_cost.append(cost)
-                if monitor_training_accuracy:
+                if monitor_training_accuracy and epoch%monitor_lapse==1:
                     accuracy = self.accuracy(training_data)
                     training_accuracy.append(accuracy)
-                if monitor_evaluation_cost:
+                if monitor_evaluation_cost and epoch%monitor_lapse==1:
                     cost = self.total_cost(evaluation_data, lmbda)
                     evaluation_cost.append(cost)
-                if monitor_evaluation_accuracy:
+                if monitor_evaluation_accuracy and epoch%monitor_lapse==1:
                     accuracy = self.accuracy(evaluation_data)
                     evaluation_accuracy.append(accuracy)
+                
+                epoch += 1
                 if variable_learning:
                     # if a better point in optimization is found, make
                     # a copy of that instant.
@@ -370,7 +373,7 @@ class Network(object):
         print("total learning time = %2.1f minutes" % ((time.time()-begin_time)/60.0))
         if show_plot:
             plt.figure()
-            iteration = list(range(1, epoch))
+            iteration = list(range(1, epoch, monitor_lapse))
             if monitor_training_cost:
                 plt.plot(iteration, training_cost, label="training cost")
             if monitor_evaluation_cost:
