@@ -122,7 +122,7 @@ class ExponentialCost(object):
         np.nan_to_num is used to ensure numerical stability.
         """
         y_out = a.transpose()
-        return np.sum(np.nan_to_num(y_out-y - y*np.log(y_out/y)))
+        return np.sum(np.nan_to_num(y_out-y - y*np.log(y_out) + y*np.log(y)))
     
     @staticmethod
     def delta(a_prime, a, y):
@@ -182,7 +182,7 @@ class Network(object):
             self.biases.append(self.b_initialize(layer))
             self.weights.append(self.w_initialize(layer))
 
-    def b_initialize(self, layer):
+    def b_initialize(self, l):
         """
         Initialize each bias of layer ``l`` according to their activation neurons.
         For Sigmoid or Exponential neurons, initialize the biases using a Gaussian
@@ -191,10 +191,10 @@ class Network(object):
         distribution between 1 and 2.
 
         """
-        y = self.sizes[layer]
-        if self.activations[layer-1] in ["Sigmoid", "Exponential"]:
+        y = self.sizes[l]
+        if self.activations[l-1] in ["Sigmoid", "Exponential"]:
             return np.random.randn(y, 1)
-        elif self.activations[layer-1]=="RecL":
+        elif self.activations[l-1]=="RecL":
             return np.random.uniform(1.0, 2.0, size=(y,1))
 
     def w_initialize(self, l):
@@ -203,7 +203,7 @@ class Network(object):
         For Sigmoid or Exponential neurons, initialize using a Gaussian distribution
         with mean 0 and standard deviation 1 over the square root of the number of
         weights connecting to the same neuron.
-        For Rectified Linear neurons, the same.
+        For Rectified Linear neurons, ... .
 
         """
         y = self.sizes[l]
@@ -211,7 +211,7 @@ class Network(object):
         if self.activations[l-1] in ["Sigmoid", "Exponential"]:
             return np.random.randn(y, x) / np.sqrt(x)
         elif self.activations[l-1]=="RecL":
-            return np.random.randn(y, x) / np.sqrt(x)
+            return np.random.randn(y, x) / x
 
     def activation(self, z, function):
         """Return the output of activation ``function`` for a given input ``z``."""
@@ -270,6 +270,11 @@ class Network(object):
         where mu=0 corresponds to normal stochastic gradient descent with no
         momentum contribution. The value of ``mu`` has to be chosen between
         0 and 1 where 1 corresponds to no friction term.
+        When variable_learning=True, the learning algorithm stops automatically as
+        determined by the following criteria:
+        If training cost does not reduce in ``no_improvement_size`` epochs, the learning
+        rate ``eta`` is halved. The learning algorithm does this for ``learning_halve``
+        times.
         The method also accepts ``evaluation_data``, usually either 
         the validation or test data.  We can monitor the cost and accuracy 
         on either the evaluation data or the training data, by setting the
@@ -284,6 +289,8 @@ class Network(object):
         Set print_epoch=True if you want to monitor the speed 
         of learning program.
         print_delay_time sets the time delay between printing current epoch number.
+        To reduce monitoring time, set ``monitor_lapse`` to monitor training/evaluation
+        cost/accuracy only in multiples of monitor_lapse epochs.
         """
         # to keep track of the total learning time
         begin_time = time.time()
